@@ -9,16 +9,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Localizar el proyecto (settings.gradle)
+        id: proj
+        run: |
+          f=$(find . -name settings.gradle -not -path './.git/*' | head -n 1)
+          if [ -z "$f" ]; then
+            echo "::error::No se encontró settings.gradle en el repositorio. Sube TODO el contenido del ZIP (build.gradle, settings.gradle, gradle.properties, src/...)."
+            exit 1
+          fi
+          d=$(dirname "$f")
+          echo "Proyecto encontrado en: $d"
+          echo "dir=$d" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 25
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 9.4.1
+
       - name: Compilar
+        working-directory: ${{ steps.proj.outputs.dir }}
         run: gradle build --no-daemon
+
       - uses: actions/upload-artifact@v4
         with:
           name: abismo_oceanico-jar
-          path: build/libs/*.jar
+          path: ${{ steps.proj.outputs.dir }}/build/libs/*.jar
