@@ -10,12 +10,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Localizar el proyecto (settings.gradle)
+      - name: Localizar el proyecto (o descomprimir el ZIP)
         id: proj
         run: |
           f=$(find . -name settings.gradle -not -path './.git/*' | head -n 1)
           if [ -z "$f" ]; then
-            echo "::error::No se encontró settings.gradle en el repositorio. Sube TODO el contenido del ZIP (build.gradle, settings.gradle, gradle.properties, src/...)."
+            z=$(find . -iname 'Abismo_Oceanico*.zip' -not -path './.git/*' | head -n 1)
+            if [ -n "$z" ]; then
+              echo "Descomprimiendo $z"
+              mkdir -p /tmp/proyecto
+              unzip -q "$z" -d /tmp/proyecto
+              f=$(find /tmp/proyecto -name settings.gradle | head -n 1)
+            fi
+          fi
+          if [ -z "$f" ]; then
+            echo "::error::No hay proyecto. Sube Abismo_Oceanico.zip a la raíz del repositorio (o todos los archivos del ZIP)."
             exit 1
           fi
           d=$(dirname "$f")
